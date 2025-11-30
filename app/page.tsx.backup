@@ -1,0 +1,249 @@
+];
+
+const stats = [
+    { icon: FaBook, label: 'Books Available', value: '500+' },
+    { icon: FaUsers, label: 'Active Readers', value: '2k+' },
+    { icon: FaStar, label: 'Book Reviews', value: '10k+' },
+];
+
+export default function HomePage() {
+    const { user } = useAuth();
+    const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
+    const [loading, setLoading] = useState(true);
+    const { scrollY } = useScroll();
+    const y1 = useTransform(scrollY, [0, 500], [0, 200]);
+    const y2 = useTransform(scrollY, [0, 500], [0, -150]);
+
+    useEffect(() => {
+        loadFeaturedBooks();
+    }, []);
+
+    const loadFeaturedBooks = async () => {
+        try {
+            const books = await getBooks();
+            const sorted = books
+                .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
+                .slice(0, 3);
+            setFeaturedBooks(sorted);
+        } catch (error) {
+            console.error('Error loading books:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex flex-col bg-white dark:bg-gray-950 overflow-x-hidden">
+            <Navbar />
+
+            {/* Premium Hero Section */}
+            <section className="relative min-h-[90vh] flex items-center justify-center px-4 overflow-hidden">
+                {/* Abstract Background */}
+                <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5" />
+
+                {/* Floating Orbs */}
+                <motion.div
+                    style={{ y: y1 }}
+                    className="absolute top-20 left-[10%] w-72 h-72 bg-primary/20 rounded-full blur-[100px] opacity-50"
+                />
+                <motion.div
+                    style={{ y: y2 }}
+                    className="absolute bottom-20 right-[10%] w-96 h-96 bg-purple-500/20 rounded-full blur-[100px] opacity-50"
+                />
+
+                <div className="relative max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-16 items-center">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="text-center lg:text-left z-10"
+                    >
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm mb-6 border border-primary/20">
+                            <FaCrown className="text-xs" />
+                            <span>Premium Digital Library</span>
+                        </div>
+
+                        <h1 className="font-display font-bold text-5xl md:text-7xl leading-[1.1] mb-6 tracking-tight">
+                            Discover <span className="gradient-text">Wisdom</span> <br />
+                            in Every Page
+                        </h1>
+
+                        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                            Access a curated collection of Islamic literature, academic masterpieces, and timeless classics. Elevate your mind with Karwan Auliya.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            {user ? (
+                                <Link href="/library">
+                                    <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
+                                        Browse Library
+                                    </Button>
+                                </Link>
+                            ) : (
+                                <Link href="/register">
+                                    <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
+                                        Start Reading Free
+                                    </Button>
+                                </Link>
+                            )}
+                            <Link href="/about">
+                                <Button variant="outline" size="lg" className="w-full sm:w-auto backdrop-blur-sm">
+                                    Learn More
+                                </Button>
+                            </Link>
+                        </div>
+
+                        {/* Stats Row */}
+                        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-center lg:justify-start gap-8 md:gap-12">
+                            {stats.map((stat, i) => (
+                                <div key={i} className="text-center lg:text-left">
+                                    <div className="font-bold text-2xl md:text-3xl text-gray-900 dark:text-white">
+                                        {stat.value}
+                                    </div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                        {stat.label}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+
+                    {/* 3D Book Illustration Placeholder */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8, rotateY: -30 }}
+                        animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                        transition={{ duration: 1, delay: 0.2 }}
+                        className="relative hidden lg:block perspective-1000"
+                    >
+                        <div className="relative w-full aspect-square max-w-lg mx-auto">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-primary to-purple-600 rounded-[2rem] rotate-6 opacity-20 blur-2xl animate-pulse" />
+                            <div className="relative h-full bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-200 dark:border-gray-800 shadow-2xl p-8 flex items-center justify-center overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+                                <div className="text-center relative z-10">
+                                    <div className="text-9xl mb-4 filter drop-shadow-2xl">📚</div>
+                                    <div className="font-display font-bold text-2xl gradient-text">Karwan Auliya</div>
+                                    <div className="text-sm text-gray-500 uppercase tracking-widest mt-2">Digital Library</div>
+                                </div>
+
+                                {/* Decorative Circles */}
+                                <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-xl" />
+                                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-xl" />
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* Featured Books Section */}
+            <section className="py-24 px-4 bg-gray-50 dark:bg-gray-900/50">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+                        <div>
+                            <h2 className="font-display font-bold text-3xl md:text-4xl mb-4">
+                                Featured <span className="text-primary">Collection</span>
+                            </h2>
+                            <p className="text-gray-600 dark:text-gray-400 max-w-xl">
+                                Handpicked selections that have transformed the lives of our readers.
+                            </p>
+                        </div>
+                        <Link href="/library">
+                            <Button variant="ghost" className="group">
+                                View All Books <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </Link>
+                    </div>
+
+                    {loading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="h-96 rounded-2xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
+                            ))}
+                        </div>
+                    ) : featuredBooks.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                            {featuredBooks.map((book, index) => (
+                                <motion.div
+                                    key={book.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    viewport={{ once: true }}
+                                    className="max-w-[180px] mx-auto w-full" // Constrained width, auto height
+                                >
+                                    <BookCard {...book} />
+                                </motion.div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-300 dark:border-gray-700">
+                            <p className="text-gray-500">No books available at the moment.</p>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* Categories Section */}
+            <section className="py-24 px-4">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center max-w-3xl mx-auto mb-16">
+                        <h2 className="font-display font-bold text-3xl md:text-4xl mb-6">
+                            Explore by Category
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-400 text-lg">
+                            Dive into our organized shelves to find exactly what you're looking for.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {categories.map((category, index) => (
+                            <motion.div
+                                key={category.slug}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                                viewport={{ once: true }}
+                            >
+                                <Link href={`/library?category=${category.slug}`}>
+                                    <div className="group p-8 rounded-3xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 h-full">
+                                        <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform duration-300">
+                                            {category.icon}
+                                        </div>
+                                        <h3 className="font-display font-bold text-xl mb-3 group-hover:text-primary transition-colors">
+                                            {category.label}
+                                        </h3>
+                                        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                                            {category.desc}
+                                        </p>
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Quote Section */}
+            <section className="py-24 px-4 bg-primary text-white relative overflow-hidden">
+                <div className="absolute inset-0">
+                    <img
+                        src="/islamic_books_bg_1764432318741.png"
+                        alt="Background Pattern"
+                        className="w-full h-full object-cover opacity-10"
+                    />
+                </div>
+                <div className="max-w-4xl mx-auto text-center relative z-10">
+                    <FaQuoteLeft className="text-4xl md:text-6xl text-white/20 mx-auto mb-8" />
+                    <blockquote className="font-display font-bold text-2xl md:text-4xl leading-relaxed mb-8">
+                        "The more that you read, the more things you will know. The more that you learn, the more places you'll go."
+                    </blockquote>
+                    <cite className="text-white/80 font-medium text-lg not-italic">
+                        — Dr. Seuss
+                    </cite>
+                </div>
+            </section>
+
+            <Footer />
+        </div>
+    );
+}

@@ -1,0 +1,373 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { FaEdit, FaImage, FaFilePdf, FaCheckCircle, FaArrowLeft } from 'react-icons/fa';
+import { getBookById, updateBook } from '@/services/bookService';
+import type { Book } from '@/services/bookService';
+
+export default function EditBookPage({ params }: { params: { id: string } }) {
+    const router = useRouter();
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
+
+    // Form state
+    const [formData, setFormData] = useState({
+        title: '',
+        author: '',
+        description: '',
+        category: 'islamic-studies',
+        language: 'urdu',
+        coverImageUrl: '',
+        pdfUrl: '',
+        pageCount: 0,
+        publishedDate: '',
+        tags: ''
+    });
+
+    useEffect(() => {
+        loadBook();
+    }, [params.id]);
+
+    const loadBook = async () => {
+        try {
+            const book = await getBookById(params.id);
+            if (!book) {
+                setError('Book not found');
+                return;
+            }
+            setFormData({
+                title: book.title,
+                author: book.author,
+                description: book.description,
+                category: book.category,
+                language: book.language,
+                coverImageUrl: book.coverImageUrl,
+                pdfUrl: book.pdfUrl,
+                pageCount: book.pageCount || 0,
+                publishedDate: book.publishedDate || '',
+                tags: book.tags ? book.tags.join(', ') : ''
+            });
+        } catch (err) {
+            console.error('Error loading book:', err);
+            setError('Failed to load book details');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const categories = [
+        { value: 'hadith', label: 'Hadith' },
+        { value: 'tafseer', label: 'Tafseer' },
+        { value: 'fiqh', label: 'Fiqh' },
+        { value: 'seerah', label: 'Seerah' },
+        { value: 'aqeedah', label: 'Aqeedah' },
+        { value: 'history', label: 'Islamic History' },
+        { value: 'academic', label: 'Academic' },
+        { value: 'fiction', label: 'Fiction' },
+        { value: 'general', label: 'General' }
+    ];
+
+    const languages = [
+        { value: 'urdu', label: 'Urdu' },
+        { value: 'english', label: 'English' },
+        { value: 'arabic', label: 'Arabic' }
+    ];
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSaving(true);
+
+        try {
+            // Validate URLs
+            if (!formData.pdfUrl.trim() || !formData.coverImageUrl.trim()) {
+                throw new Error('Please provide both PDF URL and Cover Image URL');
+            }
+
+            // Update book
+            await updateBook(params.id, {
+                title: formData.title,
+                author: formData.author,
+                description: formData.description,
+                category: formData.category,
+                language: formData.language,
+                coverImageUrl: formData.coverImageUrl,
+                pdfUrl: formData.pdfUrl,
+                pageCount: Number(formData.pageCount),
+                publishedDate: formData.publishedDate,
+                tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : []
+            });
+
+            setSuccess(true);
+            setTimeout(() => {
+                router.push('/admin/books');
+            }, 2000);
+        } catch (err: any) {
+            setError(err.message || 'Failed to update book');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    if (success) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="text-center"
+                >
+                    <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FaCheckCircle className="text-4xl text-green-600 dark:text-green-400" />
+                    </div>
+                    <h2 className="font-display font-bold text-3xl text-gray-900 dark:text-white mb-2">
+                        Book Updated!
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        Redirecting to books list...
+                    </p>
+                </motion.div>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <div className="mb-8 flex items-center gap-4">
+                <button
+                    onClick={() => router.back()}
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                    <FaArrowLeft />
+                </button>
+                <div>
+                    <h1 className="font-display font-bold text-4xl text-gray-900 dark:text-white mb-2">
+                        Edit Book
+                    </h1>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        Update book details
+                    </p>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-200 dark:border-gray-700">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Book Title */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Book Title *
+                        </label>
+                        <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                            placeholder="Enter book title"
+                            required
+                        />
+                    </div>
+
+                    {/* Author */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Author *
+                        </label>
+                        <input
+                            type="text"
+                            name="author"
+                            value={formData.author}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                            placeholder="Enter author name"
+                            required
+                        />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Description *
+                        </label>
+                        <textarea
+                            name="description"
+                            value={formData.description}
+                            onChange={handleInputChange}
+                            rows={4}
+                            className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white resize-none"
+                            placeholder="Enter book description"
+                            required
+                        />
+                    </div>
+
+                    {/* Category and Language */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Category *
+                            </label>
+                            <select
+                                name="category"
+                                value={formData.category}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                                required
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Language *
+                            </label>
+                            <select
+                                name="language"
+                                value={formData.language}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                                required
+                            >
+                                {languages.map(lang => (
+                                    <option key={lang.value} value={lang.value}>{lang.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* PDF URL */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <FaFilePdf className="inline mr-2" />
+                            PDF URL (Google Drive Link) *
+                        </label>
+                        <input
+                            type="url"
+                            name="pdfUrl"
+                            value={formData.pdfUrl}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                            placeholder="https://drive.google.com/file/d/..."
+                            required
+                        />
+                    </div>
+
+                    {/* Cover Image URL */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <FaImage className="inline mr-2" />
+                            Cover Image URL (Google Drive Link) *
+                        </label>
+                        <input
+                            type="url"
+                            name="coverImageUrl"
+                            value={formData.coverImageUrl}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                            placeholder="https://drive.google.com/file/d/..."
+                            required
+                        />
+                    </div>
+
+                    {/* Optional Fields */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Page Count (Optional)
+                            </label>
+                            <input
+                                type="number"
+                                name="pageCount"
+                                value={formData.pageCount}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                                placeholder="500"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Published Date (Optional)
+                            </label>
+                            <input
+                                type="date"
+                                name="publishedDate"
+                                value={formData.publishedDate}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Tags */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Tags (Optional, comma-separated)
+                        </label>
+                        <input
+                            type="text"
+                            name="tags"
+                            value={formData.tags}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                            placeholder="hadith, authentic, sahih"
+                        />
+                    </div>
+
+                    {/* Error Message */}
+                    {error && (
+                        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400">
+                            {error}
+                        </div>
+                    )}
+
+                    {/* Submit Button */}
+                    <div className="flex gap-4">
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="submit"
+                            disabled={saving}
+                            className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {saving ? (
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    <FaEdit /> Update Book
+                                </>
+                            )}
+                        </motion.button>
+
+                        <button
+                            type="button"
+                            onClick={() => router.back()}
+                            className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}

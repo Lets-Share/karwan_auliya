@@ -1,11 +1,11 @@
 import { MetadataRoute } from 'next';
-import { getBooks } from '@/services/bookService';
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const baseUrl = 'https://karwan-auliya.vercel.app'; // Will be updated after deployment
+export default function sitemap(): MetadataRoute.Sitemap {
+    const baseUrl = 'https://karwan-auliya.netlify.app';
 
-    // Static pages
-    const staticPages = [
+    // Static pages only
+    // Note: Book pages will be crawled naturally from the library page
+    return [
         {
             url: baseUrl,
             lastModified: new Date(),
@@ -37,15 +37,4 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             priority: 0.5,
         },
     ];
-
-    // Dynamic book pages
-    const books = await getBooks();
-    const bookPages = books.map((book) => ({
-        url: `${baseUrl}/book/${book.id}`,
-        lastModified: new Date(book.uploadedAt),
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
-    }));
-
-    return [...staticPages, ...bookPages];
 }
